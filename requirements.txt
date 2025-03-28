@@ -1,5 +1,4 @@
 colorlog==6.9.0
-psycopg==3.2.6
-psycopg-binary==3.2.6
+ping3==4.0.8
+psycopg2-binary==2.9.10
 PyYAML==6.0.2
-scapy==2.6.1

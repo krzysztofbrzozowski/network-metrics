@@ -41,7 +41,7 @@ handlers:
     class: logging.handlers.RotatingFileHandler
     level: DEBUG
     formatter: file
-    filename: /Users/krzysztofbrzozowski/Documents/PROJECTS/SOFTWARE/network_metrics.nosync/logs/debug.log
+    filename: ../logs/debug.log
     maxBytes: 2097152 # 2MB = 2 * 1024 * 1024
     backupCount: 10
 
