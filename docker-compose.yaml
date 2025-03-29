@@ -3,6 +3,7 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
+    image: ghcr.io/krzysztofbrzozowski/network_metrics:latest
     env_file:
       - .env
     environment:
