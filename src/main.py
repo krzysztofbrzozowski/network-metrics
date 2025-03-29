@@ -12,11 +12,7 @@ from psycopg2.sql import SQL, Identifier, Placeholder
 import logger
 
 class Database:
-    HOST=os.getenv('DB_HOST', 'db'),
-    DBNAME=os.getenv('DB_NAME', 'metricsdb'),
-    USER=os.getenv('DB_USER', 'postgres'),
-    PASSWORD=os.getenv('DB_PASSWORD', 'postgres'),
-    PORT=5432
+    dbconnection = None
 
     @classmethod
     def create_connection(cls):
@@ -29,13 +25,13 @@ class Database:
                 port=5432
             )
             logging.info(f'Connection to PostgreSQL successful')
-            return connection
+            cls.connection = connection
         except Exception as e:
             logging.error(f'Error connecting to PostgreSQL: {e}')
 
     @classmethod
     def create_table(cls):
-        connection = cls.create_connection()
+        connection = cls.dbconnection
         if connection:
             try:
                 with connection:
@@ -51,13 +47,12 @@ class Database:
                         logging.info("Table 'ping_status' checked/created successfully")
             except OperationalError as e:
                 logging.error(f"Error creating table: {e}")
-            finally:
-                connection.close()
+            # finally:
+            #     connection.close()
 
     @classmethod
     def insert_ping_status(cls, timestamp, id, ping_value):
-        print('aaaaa', timestamp, id, ping_value)
-        connection = cls.create_connection()
+        connection = cls.dbconnection
         if connection:
             try:
                 with connection:
@@ -71,10 +66,12 @@ class Database:
                         print("Ping status inserted/updated successfully")
             except OperationalError as e:
                 print(f"Error inserting ping status: {e}")
-            finally:
-                connection.close()
+            # finally:
+            #     connection.close()
 
-
+    @classmethod
+    def close_connection(cls):
+        cls.dbconnection.close()
 
 class Metrics:
     ID = 0
@@ -109,9 +106,15 @@ class Metrics:
 
 
 if __name__ == '__main__':
-    Database.create_table()
-   
-    while True:
-        timestamp, id, ping_value = Metrics.custom_ping('8.8.8.8')
-        Database.insert_ping_status(timestamp=timestamp, id=id, ping_value=ping_value)
-        time.sleep(1)
+    try:
+        Database.create_connection()
+        Database.create_table()
+    
+        while True:
+            timestamp, id, ping_value = Metrics.custom_ping('8.8.8.8')
+            Database.insert_ping_status(timestamp=timestamp, id=id, ping_value=ping_value)
+            time.sleep(1)
+    except Exception as e:
+        logging.error(f'Metrics app runnig  error - {e}')
+    finally:
+        Database.close_connection()
