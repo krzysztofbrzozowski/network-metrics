@@ -6,22 +6,74 @@ import os, sys
 from ping3 import ping
 
 import psycopg2
+from psycopg2 import OperationalError
 from psycopg2.sql import SQL, Identifier, Placeholder
 
 import logger
 
-pg_host = os.getenv("DB_HOST", "localhost")
-pg_database = os.getenv("DB_NAME", "postgres")
-pg_user = os.getenv("DB_USER", "postgres")
-pg_password = os.getenv("DB_PASSWORD", "postgres")
-
 class Database:
-    def create_pg_connection():
-        """Create and return a PostgreSQL connection."""
-        logging.info("Creating PostgreSQL connection")
-        return psycopg.connect(
-            f"postgresql://{pg_user}:{pg_password}@{pg_host}/{pg_database}"
-        )
+    HOST=os.getenv('DB_HOST', 'db'),
+    DBNAME=os.getenv('DB_NAME', 'metricsdb'),
+    USER=os.getenv('DB_USER', 'postgres'),
+    PASSWORD=os.getenv('DB_PASSWORD', 'postgres'),
+    PORT=5432
+
+    @classmethod
+    def create_connection(cls):
+        try:
+            connection = psycopg2.connect(
+                dbname=os.getenv("DB_NAME"),
+                user=os.getenv("DB_USER"),
+                password=os.getenv("DB_PASSWORD"),
+                host=os.getenv("DB_HOST", "db"),
+                port=5432
+            )
+            logging.info(f'Connection to PostgreSQL successful')
+            return connection
+        except Exception as e:
+            logging.error(f'Error connecting to PostgreSQL: {e}')
+
+    @classmethod
+    def create_table(cls):
+        connection = cls.create_connection()
+        if connection:
+            try:
+                with connection:
+                    with connection.cursor() as cursor:
+                        cursor.execute('''
+                            CREATE TABLE IF NOT EXISTS ping_status (
+                                timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP UNIQUE,
+                                id INT,
+                                ping_value NUMERIC(5,2),
+                                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                            );
+                        ''')
+                        logging.info("Table 'ping_status' checked/created successfully")
+            except OperationalError as e:
+                logging.error(f"Error creating table: {e}")
+            finally:
+                connection.close()
+
+    @classmethod
+    def insert_ping_status(cls, timestamp, id, ping_value):
+        print('aaaaa', timestamp, id, ping_value)
+        connection = cls.create_connection()
+        if connection:
+            try:
+                with connection:
+                    with connection.cursor() as cursor:
+                        cursor.execute('''
+                            INSERT INTO ping_status (timestamp, id, ping_value)
+                            VALUES (%s, %s, %s)
+                            ON CONFLICT (timestamp) DO UPDATE 
+                            SET ping_value = EXCLUDED.ping_value;
+                        ''', (timestamp, id, ping_value))
+                        print("Ping status inserted/updated successfully")
+            except OperationalError as e:
+                print(f"Error inserting ping status: {e}")
+            finally:
+                connection.close()
+
 
 
 class Metrics:
@@ -29,36 +81,37 @@ class Metrics:
 
     @classmethod
     def get_current_time(cls):
-        return datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
-
+        return datetime.now()
 
     @classmethod
     def custom_ping(cls, host):
-        ret = {
-            'time': None,
-            'ID':   None,
-            'ping': None
-        }
+        ret = {'time': None, 'id': None, 'ping': None}
 
+        # Main task of the function
         ping_ms = ping(host, unit='ms')
 
+        # If ping is fine, insert it into dict, otherwise insert Null
+        # In Grafana we want to see if something has been dropped
         if ping_ms:
-            ret['time'] = cls.get_current_time()
-            ret['ID'] = cls.ID
             ret['ping'] = round(ping_ms, 2)
-            
-            cls.ID += 1
-
-            logging.info(ret)
-            # print(f"Reply from {host}: Time={rtt:.2f}ms")
         else:
-            ret = 1
+            ret['ping'] = None
             logging.error(f"Request timed out for {host}")
 
-        return ret
+        ret['time'] = cls.get_current_time()
+        ret['id'] = cls.ID
 
-# TODO: ping can be actually env variable
-while True:
-    Metrics.custom_ping('8.8.8.8')
-    time.sleep(1)
-# Ping has to run every x amount of time and store the result in database
+        cls.ID += 1
+        logging.info(f"{ret['time'].strftime("%Y-%m-%d_%H-%M-%S")}, {ret['id']}, {ret['ping']}")
+
+        return ret.values()
+
+
+
+if __name__ == '__main__':
+    Database.create_table()
+   
+    while True:
+        timestamp, id, ping_value = Metrics.custom_ping('8.8.8.8')
+        Database.insert_ping_status(timestamp=timestamp, id=id, ping_value=ping_value)
+        time.sleep(1)
