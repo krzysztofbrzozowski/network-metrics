@@ -3,10 +3,6 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
-
-    privileged: true  # Runs the container in privileged mode
-    stdin_open: true
-    
     env_file:
       - .env
     environment:

@@ -45,8 +45,6 @@ logger_config = os.path.join(
     Path(__file__).parent.parent,
     'config', 'config_logger.yaml')
 
-print('aaaa', logger_config)
-
 # Open YAML config for logging
 if os.path.exists(logger_config):
     with open(logger_config, 'rt') as f:

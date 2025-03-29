@@ -33,7 +33,7 @@ class Metrics:
 
 
     @classmethod
-    def scapy_ping(cls, host):
+    def custom_ping(cls, host):
         ret = {
             'time': None,
             'ID':   None,
@@ -59,6 +59,6 @@ class Metrics:
 
 # TODO: ping can be actually env variable
 while True:
-    Metrics.scapy_ping('8.8.8.8')
+    Metrics.custom_ping('8.8.8.8')
     time.sleep(1)
 # Ping has to run every x amount of time and store the result in database
