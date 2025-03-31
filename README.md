@@ -6,7 +6,7 @@ Basic app stage
 - App can be run and in Docker (using docker compose) to test it locally
 
 
-Pushing package to container registry on ghcr.io
+## Pushing package to container registry on ghcr.io
 ```bash
 docker login --username <user> --password <PAT> ghcr.io
 ```
@@ -16,6 +16,11 @@ docker build . -t ghcr.io/krzysztofbrzozowski/network_metrics:0.1.0  -t ghcr.io/
 
 ```bash
 docker push ghcr.io/krzysztofbrzozowski/network_metrics:0.1.0
+```
+
+## Downloading
+```bash
+
 ```
 TODO:
     - [] Find out why scapy is not working in docker (ping not working)

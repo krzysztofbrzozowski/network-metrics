@@ -18,10 +18,7 @@ services:
     depends_on:
       db:
         condition: service_healthy
-    command: >
-      sh -c "python main.py"
       
-
   db:
     image: postgres:latest
     env_file:
