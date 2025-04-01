@@ -49,5 +49,5 @@ jobs:
           platforms: linux/amd64
           push: true
           tags: |
-            ghcr.io/krzysztofbrzozowski/network_metrics:latest
-            ghcr.io/krzysztofbrzozowski/network_metrics:${{ steps.semver.outputs.next }}
+            ghcr.io/krzysztofbrzozowski/network-metrics:latest
+            ghcr.io/krzysztofbrzozowski/network-metrics:${{ steps.semver.outputs.next }}
